@@ -1,0 +1,2 @@
+Disables Jekyll so GitHub Pages serves every file raw — required so the catalog
+serves SKILL.md as plain text instead of converting it to SKILL.html.
