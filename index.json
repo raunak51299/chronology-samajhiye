@@ -1,0 +1,14 @@
+{
+  "skills": [
+    {
+      "name": "chronology-samajhiye",
+      "version": "9",
+      "files": [
+        "SKILL.md",
+        "template.html",
+        "references/date-rules.md",
+        "references/causality.md"
+      ]
+    }
+  ]
+}
