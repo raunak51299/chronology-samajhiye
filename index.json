@@ -1,13 +1,13 @@
 {
   "skills": [
     {
-      "name": "chronology-samajhiye",
-      "version": "9",
+      "name": "skills",
+      "version": "10",
       "files": [
-        "SKILL.md",
-        "template.html",
-        "references/date-rules.md",
-        "references/causality.md"
+        "chronology-samajhiye/SKILL.md",
+        "chronology-samajhiye/template.html",
+        "chronology-samajhiye/references/date-rules.md",
+        "chronology-samajhiye/references/causality.md"
       ]
     }
   ]

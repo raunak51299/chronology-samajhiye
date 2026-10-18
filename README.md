@@ -10,7 +10,7 @@ An Agent Skill that turns any body of events — notes, articles, incident repor
 
 ## See it
 
-Open `chronology-samajhiye/template.html` in a browser — it ships with the Fall of the Roman Republic as a live demo.
+Open `skills/chronology-samajhiye/template.html` in a browser — it ships with the Fall of the Roman Republic as a live demo.
 
 ## Install
 
@@ -28,7 +28,7 @@ Open `chronology-samajhiye/template.html` in a browser — it ships with the Fal
 { "skills": ["https://<user>.github.io/chronology-samajhiye/"] }
 ```
 
-The repo root doubles as the catalog: `index.json` plus the `chronology-samajhiye/` skill folder it points to. Bump `version` in `index.json` whenever skill files change so clients refresh their cache.
+The repo root doubles as the catalog: `index.json` plus the `skills/` tree it points to. The skill's folder name is what OpenCode derives its ID from, so keep it kebab-case and unique (`skills/chronology-samajhiye/SKILL.md` reads as ID `chronology-samajhiye`). Bump `version` in `index.json` whenever skill files change so clients refresh their cache.
 
 ## Use
 
@@ -43,7 +43,7 @@ The agent extracts events, dates, and causal links, then writes `<output-dir>/<s
 ## Layout
 
     index.json                 HTTP catalog manifest
-    chronology-samajhiye/      the skill
+    skills/chronology-samajhiye/   the skill (folder name = skill ID)
       SKILL.md                 workflow + JSON schema
       template.html            self-contained renderer (greyscale, dark mode, causal arrows)
       references/
