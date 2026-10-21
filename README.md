@@ -10,7 +10,14 @@ An Agent Skill that turns any body of events — notes, articles, incident repor
 
 ## See it
 
-Open `skills/chronology-samajhiye/template.html` in a browser — it ships with the Fall of the Roman Republic as a live demo.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/ww2-preview-dark.png">
+  <img src="assets/ww2-preview-light.png" alt="Chronology Samajhiye rendering the World War II timeline — event cards joined by labeled causal arrows, with hatched gap ribbons across silent years">
+</picture>
+
+The World War II timeline above is a **[live demo](https://raunak51299.github.io/chronology-samajhiye/examples/ww2-timeline.html)** — hover a card to trace its causal links, click to expand sources and counter-claims, press `/` to filter, `[` / `]` to walk a chain.
+
+The template itself ships with the Fall of the Roman Republic as a built-in demo — open `skills/chronology-samajhiye/template.html` in a browser.
 
 ## Install
 
@@ -44,6 +51,8 @@ The agent extracts events, dates, and causal links, then writes `<output-dir>/<s
 
     index.json                 HTTP catalog manifest
     scripts/                   validate.mjs (timeline checker), check-catalog.mjs
+    assets/                    README preview images (light + dark)
+    examples/ww2-timeline.html World War II live demo (GitHub Pages)
     LICENSE                    MIT
     skills/chronology-samajhiye/   the skill (folder name = skill ID)
       SKILL.md                 workflow + JSON schema
