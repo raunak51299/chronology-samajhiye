@@ -1,0 +1,28 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate demo timeline
+        run: node scripts/validate.mjs skills/chronology-samajhiye/template.html
+      - name: Check catalog
+        run: node scripts/check-catalog.mjs
+      - name: Require version bump when skill files change
+        if: github.event_name == 'pull_request'
+        run: |
+          base=${{ github.event.pull_request.base.sha }}
+          if ! git diff --quiet "$base" HEAD -- skills/ && git diff --quiet "$base" HEAD -- index.json; then
+            echo "skills/ changed but index.json (version) did not"; exit 1
+          fi
+          if ! git diff --quiet "$base" HEAD -- skills/ && ! git diff "$base" HEAD -- index.json | grep -q '^+.*"version"'; then
+            echo "skills/ changed but version was not bumped"; exit 1
+          fi

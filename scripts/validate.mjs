@@ -1,0 +1,110 @@
+#!/usr/bin/env node
+// Validate a timeline: a .json file, or an .html file (injected data, else the demo SAMPLE).
+// Usage: node scripts/validate.mjs <file.json|file.html>
+import fs from "node:fs";
+import vm from "node:vm";
+
+const STATUS = ["proven", "corroborated", "inferred", "alleged", "disputed"];
+const TIERS = ["user_material", "primary_record", "official_report", "sworn_testimony", "journalism", "reference", "unverified_social"];
+const PRECISION = ["day", "month", "year", "approx", "relative", "unknown"];
+const ENTITY_TYPES = ["person", "organization", "company", "law"];
+
+function load(file) {
+  const text = fs.readFileSync(file, "utf8");
+  if (!file.endsWith(".html")) return JSON.parse(text);
+  const marker = "window.__TIMELINE_DATA__ = ";
+  const i = text.indexOf(marker);
+  if (i < 0) throw new Error("no __TIMELINE_DATA__ block found");
+  const rest = text.slice(i + marker.length);
+  if (rest.startsWith("/*__TIMELINE_DATA__*/ null")) {
+    const s = text.indexOf("var SAMPLE = ");
+    const e = text.indexOf("\n  };", s);
+    if (s < 0 || e < 0) throw new Error("template has no SAMPLE block");
+    return vm.runInNewContext("(" + text.slice(s + 13, e + 4) + ")");
+  }
+  const end = rest.indexOf(";\n");
+  return JSON.parse(rest.slice(0, end));
+}
+
+// Sort key: year * 10000 + month * 100 + day, supporting negative (BCE) years.
+function key(s) {
+  const m = /^(-?\d{1,6})(?:-(\d{2}))?(?:-(\d{2}))?$/.exec(s);
+  if (!m) return null;
+  const y = Number(m[1]);
+  const frac = Number(m[2] || 0) * 100 + Number(m[3] || 0);
+  return y * 10000 + (y < 0 ? -frac : frac);
+}
+
+function validate(d) {
+  const errs = [];
+  const err = (m) => errs.push(m);
+  const checkSources = (list, where) => {
+    for (const s of list || []) {
+      if (typeof s === "string") continue;
+      if (!s.label) err(`${where}: source missing label`);
+      for (const f of ["url", "archive_url"]) {
+        if (s[f] != null && !/^https?:\/\//i.test(s[f])) err(`${where}: ${f} must be http(s)`);
+      }
+      if (s.source_tier != null && !TIERS.includes(s.source_tier)) err(`${where}: bad source_tier "${s.source_tier}"`);
+    }
+  };
+  if (!d.title) err("missing title");
+  const ids = new Set();
+  const uniq = (id, where) => {
+    if (!id) return err(`${where}: missing id`);
+    if (ids.has(id)) err(`duplicate id "${id}"`);
+    ids.add(id);
+  };
+  const entIds = new Set();
+  for (const e of d.entities || []) {
+    uniq(e.id, "entity");
+    entIds.add(e.id);
+    if (e.type && !ENTITY_TYPES.includes(e.type)) err(`entity ${e.id}: bad type "${e.type}"`);
+    checkSources(e.sources, `entity ${e.id}`);
+  }
+  const evIds = new Set();
+  let prev = null;
+  for (const ev of d.events || []) {
+    uniq(ev.id, "event");
+    evIds.add(ev.id);
+    if (!ev.title) err(`event ${ev.id}: missing title`);
+    if (ev.precision && !PRECISION.includes(ev.precision)) err(`event ${ev.id}: bad precision`);
+    if (ev.status != null && !STATUS.includes(ev.status)) err(`event ${ev.id}: bad status "${ev.status}"`);
+    if (ev.confidence != null && !(ev.confidence >= 0 && ev.confidence <= 1)) err(`event ${ev.id}: confidence not in 0-1`);
+    for (const a of ev.actors || []) if (!entIds.has(a)) err(`event ${ev.id}: unknown actor "${a}"`);
+    checkSources(ev.sources, `event ${ev.id}`);
+    checkSources(ev.counter_sources, `event ${ev.id} counter_sources`);
+    if (ev.start != null) {
+      const k = key(ev.start);
+      if (k == null) err(`event ${ev.id}: bad start "${ev.start}"`);
+      else {
+        if (prev != null && k < prev) err(`event ${ev.id}: out of chronological order`);
+        prev = k;
+      }
+    }
+  }
+  for (const l of d.links || []) {
+    if (!evIds.has(l.from)) err(`link: unknown from "${l.from}"`);
+    if (!evIds.has(l.to)) err(`link: unknown to "${l.to}"`);
+    if (l.from === l.to) err(`link: self-link "${l.from}"`);
+    if (l.confidence != null && !(l.confidence >= 0 && l.confidence <= 1)) err(`link ${l.from}->${l.to}: confidence not in 0-1`);
+  }
+  return errs;
+}
+
+const file = process.argv[2];
+if (!file) {
+  console.error("usage: node scripts/validate.mjs <file.json|file.html>");
+  process.exit(2);
+}
+let errs;
+try {
+  errs = validate(load(file));
+} catch (e) {
+  errs = [e.message];
+}
+if (errs.length) {
+  console.error(errs.map((e) => "- " + e).join("\n"));
+  process.exit(1);
+}
+console.log("OK: " + file);

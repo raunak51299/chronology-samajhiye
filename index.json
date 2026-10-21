@@ -2,7 +2,7 @@
   "skills": [
     {
       "name": "skills",
-      "version": "10",
+      "version": "1.0.0",
       "files": [
         "chronology-samajhiye/SKILL.md",
         "chronology-samajhiye/template.html",

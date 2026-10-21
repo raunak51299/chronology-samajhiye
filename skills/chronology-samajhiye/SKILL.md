@@ -1,5 +1,5 @@
 ---
-name: Chronology Samajhiye
+name: chronology-samajhiye
 description: Turn messy text into a rendered causal timeline — "what happened when, and what led to what". Use when the user asks for a timeline, chronology, sequence of events, history of a subject, or a cause-and-effect breakdown, or shares event text and wants it visualized.
 ---
 
@@ -19,7 +19,7 @@ Supporting files live beside this `SKILL.md`:
 2. **Extract events.** Normalize dates and resolve relative expressions following `references/date-rules.md`. Build the **entity register first** (people, organizations, companies, documents — with their sources), then write events that reference them via `actors`. Record each event's provenance as you go (see Sourcing below).
 3. **Identify causal links.** Following `references/causality.md`. Be conservative — an honest timeline with fewer links beats a confident lie.
 4. **Build the timeline JSON** (schema below). Events **must be sorted chronologically** — the renderer uses array order, it does not sort. Undated events go where their anchor context places them.
-5. **Render.** Copy `template.html` to `<output-dir>/<slug>.html`. In the copy, replace the exact text `/*__TIMELINE_DATA__*/ null` with your JSON object — and change nothing else. The injected JSON must be valid (double quotes, no trailing commas) and every `<` in it must be serialized as `\u003c` — a verbatim excerpt containing `</script>` would otherwise terminate the page's script block. Verify afterwards that the literal string `/*__TIMELINE_DATA__*/ null` no longer appears in the file, and if a `node` runtime is available, sanity-check that the injected object parses.
+5. **Render.** Copy `template.html` to `<output-dir>/<slug>.html`. In the copy, replace the exact text `/*__TIMELINE_DATA__*/ null` with your JSON object — and change nothing else. The injected JSON must be valid (double quotes, no trailing commas) and every `<` in it must be serialized as `\u003c` (a verbatim excerpt containing `</script>` or `<!--` would otherwise break the page's script block), and U+2028 / U+2029 must be serialized as `\u2028` / `\u2029`. Verify afterwards that the literal string `/*__TIMELINE_DATA__*/ null` no longer appears in the file, and if a `node` runtime is available and the repo's `scripts/validate.mjs` is present, run `node scripts/validate.mjs <file.html>` (otherwise just check that the injected object parses).
 6. **Deliver.** Give the file path. Offer to open it (`start "" <file>` on Windows, `open` on macOS, `xdg-open` on Linux). Summarize the main causal chain in 2–4 chat bullets, and explicitly flag any inferred (dashed) links or date uncertainties. Mention the viewer supports `/` search, `#event-id` deep links, `[` / `]` to walk a causal chain from the focused card, and a dossier/print view.
 
 Default output directory: `./chronology/` (create it if missing). Use the user's location if they specified one. File name: kebab-case slug of the title, max ~48 characters.
@@ -105,7 +105,7 @@ Field notes:
 - `start` / `end`: ISO 8601 when known — `"2020"`, `"2020-03"`, `"2020-03-15"`; BCE years as negative (`"-0044"`); `null` when unknown. The renderer prettifies these for display.
 - `date_label`: use when the date is relative or too fuzzy for ISO — e.g. `"soon after the crash"`, `"early 2020s"`. It replaces the date on the card.
 - `precision`: `"day" | "month" | "year" | "approx" | "relative" | "unknown"`. `"approx"` renders with a `~` prefix.
-- `entities`: registry of the people, organizations, companies, and documents the events involve — `{ id, name, type, role, sources }`, `type` one of `"person" | "organization" | "company" | "law"`. Prefer short descriptive ids (`ent_sharma`, `ent_acme_corp`); ids must be unique across the whole file.
+- `entities`: registry of the people, organizations, companies, and documents the events involve — `{ id, name, type, role, sources }`, `type` one of `"person" | "organization" | "company" | "law"`. Prefer short descriptive ids — `ent_*` for entities (`ent_sharma`, `ent_acme_corp`) and `evt_<year>_<slug>` for events; ids must be unique across the whole file.
 - `actors` (per event): array of entity ids — drives the cast strip and click-to-filter.
 - `tags` (per event): 1–2 short lowercase categories (`"politics"`, `"payment"`, `"meeting"`) — they render as filter pills.
 - `gap_before` (per event): normally omit — the renderer auto-marks long silent stretches as hatched bands. Set `{ "label": "…" }` only to annotate a deliberate skip in your own words.
@@ -118,6 +118,10 @@ Field notes:
 - Events render in array order. Sort before writing; for ties, order cause before effect.
 
 ## Quality bar
+
+- **Small inputs**: with fewer than 5 events, still render, but say so and don't pad with filler or weak links.
+- **Large inputs**: for long material, extract the spine first (see below), then offer to expand specific periods or threads in follow-up passes rather than dumping everything in one timeline.
+- **Language**: write titles and descriptions in the language of the user's request/material; keep ids and JSON keys in English.
 
 - 5–40 events is the sweet spot. For long inputs, extract the spine and offer to expand it.
 - Keep titles under ~60 characters, descriptions under ~350.

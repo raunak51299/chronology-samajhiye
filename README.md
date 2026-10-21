@@ -25,10 +25,10 @@ Open `skills/chronology-samajhiye/template.html` in a browser — it ships with 
 **HTTP catalog** — add to `opencode.json(c)`:
 
 ```jsonc
-{ "skills": ["https://<user>.github.io/chronology-samajhiye/"] }
+{ "skills": ["https://raunak51299.github.io/chronology-samajhiye/"] }
 ```
 
-The repo root doubles as the catalog: `index.json` plus the `skills/` tree it points to. The skill's folder name is what OpenCode derives its ID from, so keep it kebab-case and unique (`skills/chronology-samajhiye/SKILL.md` reads as ID `chronology-samajhiye`). Bump `version` in `index.json` whenever skill files change so clients refresh their cache.
+The repo root doubles as the catalog: `index.json` plus the `skills/` tree it points to. The skill's folder name is what OpenCode derives its ID from, so keep it kebab-case and unique (`skills/chronology-samajhiye/SKILL.md` reads as ID `chronology-samajhiye`). Bump `version` (semver) in `index.json` whenever skill files change so clients refresh their cache.
 
 ## Use
 
@@ -43,12 +43,21 @@ The agent extracts events, dates, and causal links, then writes `<output-dir>/<s
 ## Layout
 
     index.json                 HTTP catalog manifest
+    scripts/                   validate.mjs (timeline checker), check-catalog.mjs
+    LICENSE                    MIT
     skills/chronology-samajhiye/   the skill (folder name = skill ID)
       SKILL.md                 workflow + JSON schema
       template.html            self-contained renderer (greyscale, dark mode, causal arrows)
       references/
         date-rules.md          precision ladder, relative-date anchoring, ordering
         causality.md           link vocabulary, confidence rubric, anti-patterns
+
+## Development
+
+    node scripts/validate.mjs skills/chronology-samajhiye/template.html   # validate a timeline (.json or .html)
+    node scripts/check-catalog.mjs                                         # index.json covers every skill file
+
+CI runs both, and on pull requests fails if `skills/` changed without bumping `version` in `index.json` (use semver).
 
 ## License
 
