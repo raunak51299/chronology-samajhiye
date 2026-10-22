@@ -20,7 +20,7 @@ Supporting files live beside this `SKILL.md`:
 3. **Identify causal links.** Following `references/causality.md`. Be conservative — an honest timeline with fewer links beats a confident lie.
 4. **Build the timeline JSON** (schema below). Events **must be sorted chronologically** — the renderer uses array order, it does not sort. Undated events go where their anchor context places them.
 5. **Render.** Copy `template.html` to `<output-dir>/<slug>.html`. In the copy, replace the exact text `/*__TIMELINE_DATA__*/ null` with your JSON object — and change nothing else. The injected JSON must be valid (double quotes, no trailing commas) and every `<` in it must be serialized as `\u003c` (a verbatim excerpt containing `</script>` or `<!--` would otherwise break the page's script block), and U+2028 / U+2029 must be serialized as `\u2028` / `\u2029`. Verify afterwards that the literal string `/*__TIMELINE_DATA__*/ null` no longer appears in the file, and if a `node` runtime is available and the repo's `scripts/validate.mjs` is present, run `node scripts/validate.mjs <file.html>` (otherwise just check that the injected object parses).
-6. **Deliver.** Give the file path. Offer to open it (`start "" <file>` on Windows, `open` on macOS, `xdg-open` on Linux). Summarize the main causal chain in 2–4 chat bullets, and explicitly flag any inferred (dashed) links or date uncertainties. Mention the viewer supports `/` search, `#event-id` deep links, `[` / `]` to walk a causal chain from the focused card, and a dossier/print view.
+6. **Deliver.** Give the file path. Offer to open it (`start "" <file>` on Windows, `open` on macOS, `xdg-open` on Linux). Summarize the main causal chain in 2–4 chat bullets, and explicitly flag any inferred (dashed) links or date uncertainties. Mention the viewer supports scale modes (time / hybrid / ordinal), zoom 25–500%, `/` search, `#event-id` deep links, `[` / `]` to walk a causal chain from the focused card, the minimap, and dossier/print views. The header's export menu also writes JSON, CSV, Mermaid, and TimelineJS 3.
 
 Default output directory: `./chronology/` (create it if missing). Use the user's location if they specified one. File name: kebab-case slug of the title, max ~48 characters.
 
@@ -94,6 +94,9 @@ Default output directory: `./chronology/` (create it if missing). Use the user's
       "confidence": 0.9
     }
   ],
+  "eras": [
+    { "label": "Gracchan crisis", "start": "-0133", "end": "-0121" }
+  ],
   "links": [
     { "from": "evt_0133_tribune", "to": "evt_0121_death", "label": "set precedent for", "confidence": 0.7 }
   ]
@@ -108,14 +111,27 @@ Field notes:
 - `entities`: registry of the people, organizations, companies, and documents the events involve — `{ id, name, type, role, sources }`, `type` one of `"person" | "organization" | "company" | "law"`. Prefer short descriptive ids — `ent_*` for entities (`ent_sharma`, `ent_acme_corp`) and `evt_<year>_<slug>` for events; ids must be unique across the whole file.
 - `actors` (per event): array of entity ids — drives the cast strip and click-to-filter.
 - `tags` (per event): 1–2 short lowercase categories (`"politics"`, `"payment"`, `"meeting"`) — they render as filter pills.
-- `gap_before` (per event): normally omit — the renderer auto-marks long silent stretches as hatched bands. Set `{ "label": "…" }` only to annotate a deliberate skip in your own words.
+- `gap_before` (per event): normally omit — in hybrid scale the renderer auto-marks long silent stretches as hatched `// … //` breaks. Set `{ "label": "…" }` only to annotate a deliberate skip in your own words; long labels fall back to the duration and remain available as a tooltip.
 - `confidence`: 0–1, optional. Links below `0.65` render dashed, marking them as inferred — never inflate this. Omitted links-confidence is drawn as stated.
 - `sources`: where the event comes from (see Sourcing). Object fields: `label` (display text), `url` (http/https only), `locator` (`"p. 14"`, `"§3"`, `"lead section"`), `source_tier` (see Sourcing), `excerpt` (verbatim, ≤ ~30 words), `archive_url` (Wayback/Perma mirror), `is_pull_quote` (true renders the excerpt as a callout on the card face — use sparingly). Plain strings work as shorthand.
 - `counter_sources`: same shape as `sources` — material that contradicts or complicates the event. When present, the expanded card shows a Claim vs Counter-claim split. Omit it when none was found this session — absence means "not found", not "does not exist".
 - `status`: optional epistemic flag, rendered as a greyscale badge and card framing. One of `"proven"` (overwhelmingly documented), `"corroborated"` (multiple independent sources agree), `"inferred"` (a conclusion drawn from circumstantial evidence), `"alleged"` (the event itself is a claim or accusation), `"disputed"` (sources conflict — pair with `counter_sources`). Omit when no flag is needed; never use it to hype.
 - `meta`: `last_verified`, `methodology`, `extraction_notes`, `alternative_hypotheses[]` — rendered in the About panel. `alternative_hypotheses` is where you record rival readings of the same record.
+- `eras`: optional array of `{ label, start, end }` — full-height background bands with a small label at the top, useful for named periods. Use the same ISO date forms as events, keep eras chronological and non-overlapping, and keep labels short (2–4 words). Eras render in time and hybrid scales; ordinal mode is equal-spaced and omits them.
 - `links.from` / `links.to` must reference existing event ids; direction is **cause → effect**.
 - Events render in array order. Sort before writing; for ties, order cause before effect.
+
+## Viewer controls
+
+The delivered HTML is a reader, not a static picture:
+
+- **Scale** — `time` spaces events by elapsed time (with a minimum card clearance so dense clusters stay legible); `hybrid` (default) keeps true intervals inside clusters but compresses long silences into labelled `// … //` breaks so the whole spine stays readable; `ordinal` gives every event an equal column and omits era/gap overlays. Gap labels drop out at overview zoom; the hatched break and its tooltip remain. The choice persists in the browser.
+- **Zoom** — 25% to 500% in 1.25× steps; the layout genuinely reflows (card density changes, text never shrinks below 11px). Ctrl/⌘ + wheel and trackpad pinch work; click the percentage to reset to 100%.
+- **Read** — hover a card to light only its directly connected links; click at ≥85% to expand its sources and counter-claims; click below 85% first zooms to 100%, then a second click expands.
+- **Navigate** — `/` focuses the filter, `#event-id` deep-links one card, and `[` / `]` step backward/forward along the focused card's causal chain. `←` / `→` pan when the timeline has focus; focus the minimap for `Home` / `End`.
+- **Minimap** — the fixed bottom strip shows eras and compressed gaps in time modes, plus every event tick. Click or drag to move; focus it and use `←` / `→`, `Home`, or `End`.
+- **Dossier / print** — `dossier` stacks every event into one readable column and hides the minimap; `print` produces a clean paper/PDF version with expanded source text.
+- **Exports** — the header menu writes JSON (data only), CSV (UTF-8 with BOM and CRLF), a Mermaid flowchart, or a TimelineJS 3 JSON file.
 
 ## Quality bar
 
@@ -128,7 +144,7 @@ Field notes:
 - **Event granularity**: an inline consequence earns its own event card when a later event reacts to it — "the crash scared off investors" becomes a card if the raise or the safety hire flows from that fear. Pure color and commentary stay in the description of their parent event. Roughly one card per distinct outcome or decision.
 - Never invent facts, dates, or links. `null` dates and omitted links are fine; fabricated ones are not.
 - When sources conflict, prefer the better-attested date, set `"status": "disputed"`, and put the opposing material in `counter_sources` — the card renders the split. Note residual uncertainty in the description.
-- **Gaps are findings.** When the record goes quiet between two events, leave the gap — the renderer auto-marks long silences as a hatched "no recorded events" band. Never pad a silent stretch with invented filler; if you researched the window and found nothing, say so in `meta.extraction_notes`.
+- **Gaps are findings.** When the record goes quiet between two events, leave the gap — in hybrid scale the renderer auto-marks long silences as a hatched `// … //` break band (and a gap band in the minimap). Never pad a silent stretch with invented filler; if you researched the window and found nothing, say so in `meta.extraction_notes`.
 - **Verbatim means verbatim.** Quoted material (`excerpt`) must be copied exactly from a source you fetched this session; cut it, never rewrite it. Paraphrase belongs in `description`, quotes belong in `excerpt`.
 
 ## Sourcing
@@ -147,15 +163,17 @@ When the user asks for changes ("drop event 3", "that arrow is wrong", "add more
 
 ## Optional: portable exports
 
-Offer these when the user needs something beyond the HTML file:
+The header's export menu already writes these from any rendered timeline. Offer or paste one when the user needs the data in another tool:
 
+- **JSON / CSV** — the source data, minus renderer internals. The CSV is UTF-8 with a BOM and CRLF line endings, ready for Excel.
 - **Mermaid flowchart** (for READMEs and markdown tools — edge labels carry the causality):
 
   ```mermaid
-  flowchart TD
+  flowchart LR
     e1["133 BCE · Tiberius Gracchus tribune"] -->|sparked backlash| e2["121 BCE · Gaius Gracchus killed"]
   ```
 
-  Note: mermaid views do not guarantee vertical chronological order.
+  Note: Mermaid reflows nodes and does not guarantee a strict chronological axis.
 
 - **Mermaid timeline** (pure chronology, no causes): a `timeline` block with `title` and `section`s, one entry per event.
+- **TimelineJS 3 JSON** — events plus era bands, ready for a TimelineJS page when the user needs a presentation layer.

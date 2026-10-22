@@ -32,7 +32,7 @@ function key(s) {
   if (!m) return null;
   const y = Number(m[1]);
   const frac = Number(m[2] || 0) * 100 + Number(m[3] || 0);
-  return y * 10000 + (y < 0 ? -frac : frac);
+  return y * 10000 + frac;
 }
 
 function validate(d) {
@@ -89,6 +89,42 @@ function validate(d) {
     if (l.from === l.to) err(`link: self-link "${l.from}"`);
     if (l.confidence != null && !(l.confidence >= 0 && l.confidence <= 1)) err(`link ${l.from}->${l.to}: confidence not in 0-1`);
   }
+  if (d.eras != null) {
+    if (!Array.isArray(d.eras)) err("eras: must be an array");
+    else {
+      let prevEnd = null;
+      d.eras.forEach((er, i) => {
+        const w = `era ${i + 1}`;
+        if (!er || typeof er !== "object") { err(`${w}: must be an object`); return; }
+        if (!er.label) err(`${w}: missing label`);
+        const a = key(er.start || "");
+        const b = key(er.end || "");
+        if (a == null) err(`${w}: bad start "${er.start}"`);
+        if (b == null) err(`${w}: bad end "${er.end}"`);
+        if (a != null && b != null && b < a) err(`${w}: end before start`);
+        if (a != null && prevEnd != null && a < prevEnd) err(`${w}: overlaps or is out of order`);
+        if (b != null) prevEnd = b;
+      });
+    }
+  }
+  return errs;
+}
+
+function checkHtml(text) {
+  const errs = [];
+  for (const id of ["stage", "canvas", "links", "scalemode", "minimap", "mmThumb", "exp", "dossierBtn", "printBtn"]) {
+    if (text.indexOf(`id="${id}"`) < 0) errs.push(`html: missing #${id}`);
+  }
+  const marker = "window.__TIMELINE_DATA__ = ";
+  const i = text.indexOf(marker);
+  if (i < 0) return errs;
+  const rest = text.slice(i + marker.length);
+  if (rest.startsWith("/*__TIMELINE_DATA__*/ null")) return errs;
+  const end = rest.indexOf(";\n");
+  const data = end < 0 ? rest : rest.slice(0, end);
+  if (data.includes("<")) errs.push("html: literal '<' inside the injected JSON (use \\u003c)");
+  if (data.includes("\u2028") || data.includes("\u2029")) errs.push("html: raw U+2028/U+2029 inside the injected JSON");
+  if (text.includes("/*__TIMELINE_DATA__*/")) errs.push("html: placeholder token still present after injection");
   return errs;
 }
 
@@ -98,8 +134,11 @@ if (!file) {
   process.exit(2);
 }
 let errs;
+let text = "";
 try {
+  text = fs.readFileSync(file, "utf8");
   errs = validate(load(file));
+  if (file.endsWith(".html")) errs = errs.concat(checkHtml(text));
 } catch (e) {
   errs = [e.message];
 }

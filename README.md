@@ -7,6 +7,8 @@ An Agent Skill that turns any body of events — notes, articles, incident repor
 - No API keys, no backend, no dependencies. **The agent itself is the LLM.**
 - Output is one HTML file that works offline — open it anywhere, forever.
 - Greyscale, editorial design. Hover any event to light up its direct causal links. Light/dark theme built in.
+- Three time scales — **time** (proportional to elapsed time, with a minimum card clearance), **hybrid** (compresses long silences), **ordinal** (equal columns) — with real 25–500% zoom and density-aware cards.
+- A minimap, `#event-id` deep links, causal-chain stepping, a stacked dossier, print/PDF, and JSON / CSV / Mermaid / TimelineJS exports.
 
 ## See it
 
@@ -15,9 +17,17 @@ An Agent Skill that turns any body of events — notes, articles, incident repor
   <img src="assets/ww2-preview-light.png" alt="Chronology Samajhiye rendering the World War II timeline — event cards joined by labeled causal arrows, with hatched gap ribbons across silent years">
 </picture>
 
-The World War II timeline above is a **[live demo](https://raunak51299.github.io/chronology-samajhiye/examples/ww2-timeline.html)** — hover a card to trace its causal links, click to expand sources and counter-claims, press `/` to filter, `[` / `]` to walk a chain.
+The World War II timeline above is a **[live demo](https://raunak51299.github.io/chronology-samajhiye/examples/ww2-timeline.html)** — switch time scale, zoom out to the overview, drag the minimap, hover a card to trace its causal links, click to expand sources and counter-claims, press `/` to filter, `[` / `]` to walk a chain.
 
 The template itself ships with the Fall of the Roman Republic as a built-in demo — open `skills/chronology-samajhiye/template.html` in a browser.
+
+## Features
+
+- **Real scale, not a stretched screenshot.** The layout engine reflows at every zoom level: cards step down from 300px to 210px to 132px, text stays legible, and adjacent events never collide. Long silences become labelled `// … //` breaks in hybrid mode (labels step out at overview zoom), or keep their true width in time mode.
+- **Named eras.** Optional `eras[]` paint full-height period bands with small top labels in time scales, and appear as bands in the minimap.
+- **A reader.** Search and tag filters, `#event-id` deep links, `[` / `]` to step along a causal chain, hover isolation, and a fixed minimap for long spines. Keyboard: `/`, `[` / `]`, `Esc`; `←` / `→` pan when the timeline or a card has focus; the minimap supports `Home` / `End`.
+- **A document.** Click a card for sources, excerpts, counter-claims, and relations (from the overview, the first click zooms in); `dossier` stacks the whole record into one column; `print` produces a clean paper/PDF version.
+- **Portable data.** The header menu exports stripped JSON, Excel-ready CSV (UTF-8 BOM, CRLF), a Mermaid flowchart, and TimelineJS 3 JSON.
 
 ## Install
 
@@ -53,9 +63,10 @@ The agent extracts events, dates, and causal links, then writes `<output-dir>/<s
     scripts/                   validate.mjs (timeline checker), check-catalog.mjs
     assets/                    README preview images (light + dark)
     examples/ww2-timeline.html World War II live demo (GitHub Pages)
+    CHANGELOG.md               release notes
     LICENSE                    MIT
     skills/chronology-samajhiye/   the skill (folder name = skill ID)
-      SKILL.md                 workflow + JSON schema
+      SKILL.md                 workflow + JSON schema + viewer controls
       template.html            self-contained renderer (greyscale, dark mode, causal arrows)
       references/
         date-rules.md          precision ladder, relative-date anchoring, ordering
