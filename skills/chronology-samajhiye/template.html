@@ -1437,7 +1437,14 @@ window.__TIMELINE_DATA__ = /*__TIMELINE_DATA__*/ null;
       ev._col.style.width = CARD_W + "px";
       ev._col.style.left = "0px";
       ev._col.style.top = "0px";
+      /* Expanded cards are overlays: bank math must always use the card's
+         resting height, so measure with the expansion briefly removed. */
+      var card = ev._card;
+      var wasOpen = card.classList.contains("expanded");
+      var scrollTop = card.scrollTop;
+      if (wasOpen) card.classList.remove("expanded");
       ev._h = ev._col.offsetHeight;
+      if (wasOpen) { card.classList.add("expanded"); card.scrollTop = scrollTop; }
       ev._lane = null;
     });
 

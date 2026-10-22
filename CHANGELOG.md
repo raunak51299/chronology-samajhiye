@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.4 - 2026-10-23
+
+### Fixed
+
+- Switching scale mode while a card was expanded no longer distorts the layout. The upper bank used to keep the extra height that the expanded card had temporarily contributed to the lane math; layout now always measures resting card heights, and the open card stays a clean overlay.
+
 ## 2.0.3 - 2026-10-22
 
 ### Changed
