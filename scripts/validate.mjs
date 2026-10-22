@@ -31,6 +31,16 @@ function key(s) {
   const m = /^(-?\d{1,6})(?:-(\d{2}))?(?:-(\d{2}))?$/.exec(s);
   if (!m) return null;
   const y = Number(m[1]);
+  if (m[2] != null) {
+    const mo = Number(m[2]);
+    if (mo < 1 || mo > 12) return null;
+    if (m[3] != null) {
+      const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+      const dim = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1];
+      const d = Number(m[3]);
+      if (d < 1 || d > dim) return null;
+    }
+  }
   const frac = Number(m[2] || 0) * 100 + Number(m[3] || 0);
   return y * 10000 + frac;
 }
@@ -63,6 +73,7 @@ function validate(d) {
     checkSources(e.sources, `entity ${e.id}`);
   }
   const evIds = new Set();
+  const evKey = new Map();
   let prev = null;
   for (const ev of d.events || []) {
     uniq(ev.id, "event");
@@ -80,6 +91,7 @@ function validate(d) {
       else {
         if (prev != null && k < prev) err(`event ${ev.id}: out of chronological order`);
         prev = k;
+        evKey.set(ev.id, k);
       }
     }
   }
@@ -87,6 +99,7 @@ function validate(d) {
     if (!evIds.has(l.from)) err(`link: unknown from "${l.from}"`);
     if (!evIds.has(l.to)) err(`link: unknown to "${l.to}"`);
     if (l.from === l.to) err(`link: self-link "${l.from}"`);
+    if (evKey.has(l.from) && evKey.has(l.to) && evKey.get(l.from) > evKey.get(l.to)) err(`link ${l.from}->${l.to}: cause starts after its effect`);
     if (l.confidence != null && !(l.confidence >= 0 && l.confidence <= 1)) err(`link ${l.from}->${l.to}: confidence not in 0-1`);
   }
   if (d.eras != null) {
