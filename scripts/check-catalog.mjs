@@ -21,3 +21,5 @@ for (const s of idx.skills) {
     if (!m || m[1].trim() !== id) { console.error(`${f}: name must equal folder "${id}"`); bad++; }
   }
 }
+if (bad) process.exit(1);
+console.log("OK: catalog");
