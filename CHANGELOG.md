@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.0.3 - 2026-10-22
+
+### Changed
+
+- The top bar now uses an Apple-style glass material instead of the old translucent strip: a lighter tint (30% opacity, 34% in dark mode), a moderate 12px backdrop blur, a glass-tuned hairline border, a 1px inner top highlight, and a soft drop shadow. No color saturation boost keeps cards underneath their true colors.
+
+## 2.0.2 - 2026-10-22
+
+### Internal
+
+- Validation and CI hardening from the community-feedback merge: the catalog check reports a proper exit code, validators now check date ranges and causal-link ordering, and CI requires a version bump whenever skill files change in a pull request.
+
 ## 2.0.1 - 2026-10-22
 
 ### Fixed
