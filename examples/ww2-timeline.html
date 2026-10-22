@@ -260,8 +260,9 @@
   .ev-top { display: flex; align-items: center; gap: 8px; padding-right: 20px; }
   .ev-top .ev-date { flex: 1 1 auto; }
   .ev-hop {
-    flex: 0 0 auto; font-family: var(--mono); font-size: 9px; letter-spacing: .04em; color: var(--ink3);
-    border: 1px dashed var(--line2); border-radius: 4px; padding: 0 4px; white-space: nowrap;
+    position: absolute; top: 1px; left: 16px; z-index: 2;
+    font-family: var(--mono); font-size: 9px; line-height: 1; letter-spacing: .04em; color: var(--ink3);
+    background: var(--card); border: 1px dashed var(--line2); border-radius: 4px; padding: 1px 4px; white-space: nowrap;
   }
   .ev-hop.root { border-style: solid; border-color: var(--ink2); color: var(--ink2); }
   .ev-status {
@@ -395,12 +396,14 @@
   .scalemode button:hover { color: var(--ink); }
   .scalemode button.active { background: var(--ink); color: var(--bg); }
 
+  #canvas.lod-compact .ev-hop,
   #canvas.lod-compact .ev-meta,
   #canvas.lod-compact .ev-sources,
   #canvas.lod-compact .ev-quote,
   #canvas.lod-compact .ev-desc { display: none; }
   #canvas.lod-overview .ev-date,
   #canvas.lod-overview .ev-status,
+  #canvas.lod-overview .ev-hop,
   #canvas.lod-overview .ev-meta,
   #canvas.lod-overview .ev-sources,
   #canvas.lod-overview .ev-quote,
@@ -515,6 +518,7 @@
     #links { display: none; }
     #canvas .card { padding: 14px 16px !important; border-radius: 14px !important; }
     #canvas .card::after { display: none !important; }
+    #canvas .ev-hop { display: none !important; }
     #canvas .ev-title { font-size: 14.5px !important; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; }
     #canvas .ev-desc { display: block !important; }
     .col { position: static !important; left: auto !important; top: auto !important; width: auto !important; max-width: none; margin: 0 0 10pt; }
@@ -1682,11 +1686,20 @@ window.__TIMELINE_DATA__ = {
       var hop = ev._hop;
       if (!hop) return;
       if (selId == null || !byId.has(selId)) { hop.hidden = true; return; }
-      if (ev.id === selId) { hop.hidden = false; hop.classList.add("root"); hop.textContent = "root"; return; }
-      var parts = [];
-      if (up.has(ev.id)) parts.push("-" + up.get(ev.id));
-      if (down.has(ev.id)) parts.push("+" + down.get(ev.id));
-      if (parts.length) { hop.hidden = false; hop.classList.remove("root"); hop.textContent = parts.join(" "); }
+      if (ev.id === selId) {
+        hop.hidden = false; hop.classList.add("root"); hop.textContent = "root";
+        hop.title = "Selected event - root of this causal chain";
+        hop.setAttribute("aria-label", hop.title);
+        return;
+      }
+      var parts = [], hints = [];
+      if (up.has(ev.id)) { parts.push("-" + up.get(ev.id)); hints.push(up.get(ev.id) + " step" + (up.get(ev.id) === 1 ? "" : "s") + " upstream"); }
+      if (down.has(ev.id)) { parts.push("+" + down.get(ev.id)); hints.push(down.get(ev.id) + " step" + (down.get(ev.id) === 1 ? "" : "s") + " downstream"); }
+      if (parts.length) {
+        hop.hidden = false; hop.classList.remove("root"); hop.textContent = parts.join(" ");
+        hop.title = hints.join(" and ") + " of the selected event";
+        hop.setAttribute("aria-label", hop.title);
+      }
       else { hop.hidden = true; }
     });
   }
@@ -1822,6 +1835,7 @@ window.__TIMELINE_DATA__ = {
     }
     var open = ev._card.classList.toggle("expanded");
     ev._col.classList.toggle("expanded", open);
+    fitStageToExpanded();
     try { history.replaceState(null, "", open ? "#" + encodeURIComponent(ev.id) : "#"); } catch (e) {}
   }
 
@@ -1855,6 +1869,7 @@ window.__TIMELINE_DATA__ = {
           any = true;
         }
       });
+      fitStageToExpanded();
       if (filterActive()) {
         fEntity = null; fTag = null; fText = "";
         var q = document.getElementById("q");
@@ -2117,7 +2132,22 @@ window.__TIMELINE_DATA__ = {
       var kev = byId.get(keep);
       if (kev) stage.scrollLeft = Math.max(0, kev._cx - stage.clientWidth / 2);
     }
+    fitStageToExpanded();
     anchorId = null;
+  }
+
+  /* Expanded cards are overlays, so they must not be clipped by the stage's
+     viewport. Grow the sizer (and therefore the stage) only when an open card
+     needs room below the normal canvas. */
+  function fitStageToExpanded() {
+    if (!metrics.H || document.body.classList.contains("dossier")) return;
+    var needed = metrics.H;
+    events.forEach(function (ev) {
+      if (ev._card && ev._card.classList.contains("expanded")) {
+        needed = Math.max(needed, ev._col.offsetTop + ev._col.offsetHeight + 24);
+      }
+    });
+    sizer.style.height = needed + "px";
   }
 
   var ltimer = 0;

@@ -1,6 +1,13 @@
 # Changelog
 
-## 2.0.0 — 2026-10-22
+## 2.0.1 - 2026-10-22
+
+### Fixed
+
+- Causal-chain hop badges no longer share the date row. Focusing a card no longer shrinks a long date into two lines or changes the card height; the badge sits above the date with a descriptive tooltip and is hidden at compact/overview zoom and in print.
+- Expanded cards near the bottom of the stage no longer have their lower content clipped. The stage grows just enough to keep the whole open card readable, and shrinks again when it closes.
+
+## 2.0.0 - 2026-10-22
 
 The viewer becomes a reading instrument: real time scales, density-aware zoom, eras, a minimap, and portable exports.
 
